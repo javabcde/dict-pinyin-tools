@@ -2,7 +2,7 @@ import os
 import re
 
 # 设置dicts文件夹路径（固定路径，后续可在此处修改）
-dicts_folder = r"E:\RimeConfig\rime-wanxiang-yx-fuzhu\dicts"
+dicts_folder = r"D:\RimeConfig\rime-wanxiang-yx-fuzhu\dicts"
 
 # 确保dicts文件夹存在
 if not os.path.exists(dicts_folder):

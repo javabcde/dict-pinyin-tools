@@ -41,12 +41,13 @@ except ImportError:
     HAS_PYPINYIN = False
 
 # ─────────────── 配 置 区 ────────────────
-INPUT_PATH  = r"E:\RimeConfig\rime-wanxiang-yx-fuzhu\dicts"  # 目录或单文件路径
+INPUT_PATH  = r"D:\RimeConfig\rime-wanxiang-yx-fuzhu\dicts"  # 目录或单文件路径
 REFRESH_PINYIN = True          # 是否刷新拼音
 REFRESH_AUX_CODE = True        # 是否刷新辅助码
-AUX_FILE    = r"e:\RimeConfig\dict-pinyin-tools\auxcode\手心辅易学码9.txt"  # 辅助码文件路径
-CUSTOM_PINYIN_DIR = r"e:\RimeConfig\dict-pinyin-tools\pinyin_data"  # 自定义拼音数据目录
-AUX_SEP_REGEX = r'[;\[]'       # 定义“拼音后缀”分隔符；默认匹配 `;` 与 `[`
+AUX_FILE    = r"D:\RimeConfig\Tools\dict-pinyin-tools\auxcode\手心辅易学码9.txt"  # 辅助码文件路径
+CUSTOM_PINYIN_DIR = r"D:\RimeConfig\Tools\dict-pinyin-tools\pinyin_data"  # 自定义拼音数据目录
+AUX_SEP_REGEX = r'[;\[]'       # 定义"拼音后缀"分隔符；默认匹配 `;` 与 `[`
+PRESERVE_ORIGINAL_PINYIN = True  # 对于多音字，是否保留原始词典中的拼音
 # ──────────────────────────────────────
 
 # 表头定义
@@ -191,10 +192,10 @@ def remove_auxiliary_code_from_line(line: str, userdb: bool) -> str:
     pinyins = cols[pinyin_index].split()
     processed_pinyins = []
     for pinyin_part in pinyins:
-        # 分割拼音和辅助码
-        pinyin_parts = pinyin_part.split(';')
+        # 分割拼音和辅助码，使用定义的AUX_SEP_REGEX
+        pinyin_parts = re.split(AUX_SEP_REGEX, pinyin_part, maxsplit=1)
         if pinyin_parts:
-            processed_pinyins.append(pinyin_parts[0])  # 只保留分号前的部分
+            processed_pinyins.append(pinyin_parts[0])  # 只保留分隔符前的部分
     
     # 重新组合拼音部分
     cols[pinyin_index] = ' '.join(processed_pinyins)
@@ -353,7 +354,17 @@ def process_file_in_place(file_path: str, aux_map: Dict[str, str]):
                         processed_lines.append(line)
                         continue
                     
-                    char_py = [p[0] for p in pinyin(word, style=Style.TONE, heteronym=False)]
+                    # 对于用户词典格式，如果配置保留原始拼音，保留原始拼音
+                    if PRESERVE_ORIGINAL_PINYIN:
+                        # 保留原始拼音（无论是单字还是多字词语）
+                        # 确保segs不为空
+                        if segs:
+                            char_py = [p.split(';')[0] for p in segs]
+                        else:
+                            # 如果segs为空，使用pypinyin生成拼音
+                            char_py = [p[0] for p in pinyin(word, style=Style.TONE, heteronym=False)]
+                    else:
+                        char_py = [p[0] for p in pinyin(word, style=Style.TONE, heteronym=False)]
                     
                     new_segs = []
                     for i, seg in enumerate(segs):
@@ -370,7 +381,18 @@ def process_file_in_place(file_path: str, aux_map: Dict[str, str]):
                         processed_lines.append(line)
                         continue
                     
-                    char_py = [p[0] for p in pinyin(word, style=Style.TONE, heteronym=False)]
+                    # 对于普通词典格式，如果配置保留原始拼音且有原拼音列，保留原始拼音
+                    if PRESERVE_ORIGINAL_PINYIN and len(cols) >= 2 and cols[1]:
+                        # 保留原始拼音（无论是单字还是多字词语）
+                        # 确保拆分后的拼音列表不为空
+                        py_parts = cols[1].split()
+                        if py_parts:
+                            char_py = [p.split(';')[0] for p in py_parts]
+                        else:
+                            # 如果原拼音列拆分后为空，使用pypinyin生成拼音
+                            char_py = [p[0] for p in pinyin(word, style=Style.TONE, heteronym=False)]
+                    else:
+                        char_py = [p[0] for p in pinyin(word, style=Style.TONE, heteronym=False)]
                     
                     if len(cols) == 1:  # 仅汉字
                         cols.append(' '.join(char_py))
@@ -423,9 +445,12 @@ def process_file_in_place(file_path: str, aux_map: Dict[str, str]):
                 if userdb:
                     cols[0] = ' '.join(merged)
                 else:
-                    # 确保merged不为空
-                    if merged:
+                    # 确保merged不为空且seg_idx有效
+                    if merged and seg_idx < len(cols):
                         cols[seg_idx] = ' '.join(merged)
+                    elif seg_idx >= len(cols):
+                        # 如果列索引无效，添加新列
+                        cols.append(' '.join(merged))
                 lines_refreshed_aux += 1
             except Exception as e:
                 logger.warning(f"处理辅助码时出错: {e}，跳过该行辅助码刷新")
