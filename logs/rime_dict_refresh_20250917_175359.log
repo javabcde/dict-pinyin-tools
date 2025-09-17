@@ -1,0 +1,8 @@
+2025-09-17 17:54:00,109 - INFO - Rime 词典刷新与辅助码管理工具（带日志）启动...
+2025-09-17 17:54:00,109 - INFO - 日志文件已保存至: D:\RimeConfig\Tools\dict-pinyin-tools\logs\rime_dict_refresh_20250917_175359.log
+2025-09-17 17:54:00,112 - WARNING - ⚠️ 警告：本工具会直接修改源文件，请确保已备份重要数据！
+2025-09-17 17:54:00,114 - ERROR - 输入路径不存在: E:\RimeConfig\rime-wanxiang-yx-fuzhu\dicts
+2025-09-17 17:54:00,114 - ERROR - 请修改配置区中的 INPUT_PATH 参数指向有效的文件或目录
+2025-09-17 17:54:00,114 - INFO - ===== 处理流程完成 =====
+2025-09-17 17:54:00,114 - INFO - 详细日志已保存至: D:\RimeConfig\Tools\dict-pinyin-tools\logs\rime_dict_refresh_20250917_175359.log
+2025-09-17 17:54:00,115 - INFO - 注意：请检查处理结果是否符合预期。建议定期备份词典文件。
